@@ -7,10 +7,16 @@ services:
         class: Glavweb\SecurityBundle\Security\QueryBuilderFilter
         arguments: ["@glavweb_security.access_handler", "@security.authorization_checker"]
 
-    glavweb_security.access_access_voter:
+    glavweb_security.access_voter:
         class:  Glavweb\SecurityBundle\Security\Authorization\Voter\AccessVoter
         arguments: ["@doctrine", "@glavweb_security.access_handler"]
         public: false
+        tags:
+           - { name: security.voter }
+
+    glavweb_security.super_admin_voter:
+        class:      Glavweb\SecurityBundle\Security\Authorization\Voter\SuperAdminVoter
+        public:     false
         tags:
            - { name: security.voter }
 
