@@ -1,0 +1,29 @@
+services:
+    glavweb_security.access_handler:
+        class:  Glavweb\SecurityBundle\Security\AccessHandler
+        arguments: ["@annotation_reader", "@security.token_storage"]
+
+    glavweb_security.access_query_builder_filter:
+        class: Glavweb\SecurityBundle\Security\QueryBuilderFilter
+        arguments: ["@glavweb_security.access_handler", "@security.authorization_checker"]
+
+    glavweb_security.access_access_voter:
+        class:  Glavweb\SecurityBundle\Security\Authorization\Voter\AccessVoter
+        arguments: ["@doctrine", "@glavweb_security.access_handler"]
+        public: false
+        tags:
+           - { name: security.voter }
+
+    glavweb_security.editable_role_builder:
+        class: Glavweb\SecurityBundle\Security\EditableRolesBuilder
+        arguments: ["@doctrine", "@glavweb_security.access_handler", "%security.role_hierarchy.roles%"]
+
+    glavweb_security.form_type_security_roles:
+        class: Glavweb\SecurityBundle\Form\SecurityRolesType
+        arguments: ["@glavweb_security.editable_role_builder"]
+        tags:
+            - {name: form.type, alias: glavweb_security_roles}
+
+    glavweb_security.admin_security_handler_role:
+        class: Glavweb\SecurityBundle\Admin\SecurityHandlerRole
+        arguments: ["@security.authorization_checker", "@glavweb_security.access_handler", [ROLE_SUPER_ADMIN]]

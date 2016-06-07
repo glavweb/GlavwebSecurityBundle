@@ -1,0 +1,23 @@
+{
+    "name": "glavweb/security-bundle",
+    "description": "Symfony GlavwebSecurityBundle",
+    "authors": [
+        {
+            "name": "nilov",
+            "email": "nilov@glavweb.ru",
+            "homepage": "http://glavweb.ru"
+        },
+        {
+            "name": "GLAVWEB Community",
+            "homepage": "https://github.com/glavweb/GlavwebSecurityBundle/contributors"
+        }
+    ],
+    "require": {
+        "symfony/http-foundation": "~2.3|~3.0",
+        "symfony/form": "^2.3.5|~3.0",
+        "symfony/security-bundle": "~2.3|~3.0"
+    },
+    "autoload": {
+        "psr-4": { "Glavweb\\SecurityBundle\\": "" }
+    }
+}
