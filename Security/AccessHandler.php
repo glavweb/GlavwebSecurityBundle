@@ -14,8 +14,6 @@ namespace Glavweb\SecurityBundle\Security;
 use Doctrine\Common\Annotations\Reader;
 use Glavweb\SecurityBundle\Mapping\Annotation\Access;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
@@ -47,6 +45,11 @@ class AccessHandler
     private $tokenStorage;
 
     /**
+     * @var \Twig_Environment
+     */
+    private $twigEnvironment;
+
+    /**
      * AccessHandler constructor.
      *
      * @param Reader $annotationReader
@@ -54,8 +57,8 @@ class AccessHandler
      */
     public function __construct(Reader $annotationReader, TokenStorageInterface $tokenStorage)
     {
-        $this->annotationReader     = $annotationReader;
-        $this->tokenStorage         = $tokenStorage;
+        $this->annotationReader = $annotationReader;
+        $this->tokenStorage     = $tokenStorage;
     }
 
     /**
@@ -216,9 +219,32 @@ class AccessHandler
             $user = $this->tokenStorage->getToken()->getUser();
         }
 
-        return strtr($condition, [
-            '{{alias}}' => $alias,
-            '{{user}}'  => $user->getId(),
-        ]);
+        $userId = null;
+        if ($user instanceof UserInterface && method_exists($user, 'getId')) {
+            $userId = $user->getId();
+        }
+
+        $template = $this->getTwigEnvironment()->createTemplate($condition);
+
+        return trim($template->render([
+            'alias'  => $alias,
+            'user'   => $user,
+            'userId' => $userId,
+        ]));
+    }
+
+    /**
+     * @return \Twig_Environment
+     */
+    private function getTwigEnvironment()
+    {
+        if (!$this->twigEnvironment) {
+            $this->twigEnvironment = new \Twig_Environment(new \Twig_Loader_Array([]), [
+                'strict_variables' => true,
+                'autoescape'       => false,
+            ]);
+        }
+
+        return $this->twigEnvironment;
     }
 }

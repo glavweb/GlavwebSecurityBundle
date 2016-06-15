@@ -5,7 +5,7 @@
         <div class="editable">
             {% set values = {} %}
             {%- for name, child in form %}
-                {%- set values = values|merge({(child.vars.value) : (name)}) %}
+                {%- set values = values|merge({(child.vars.label) : (name)}) %}
             {% endfor -%}
 
             {% if entityRoles|length %}
@@ -50,7 +50,7 @@
 
             <h4>Basic roles</h4>
             {% for name, value in securityRoles %}
-                {% set child = form[values[value]] %}
+                {% set child = form[values[name]] %}
 
                 <div>
                     {{- form_widget(child) -}}

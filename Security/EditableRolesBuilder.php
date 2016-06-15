@@ -97,7 +97,7 @@ class EditableRolesBuilder
         // Get roles from the service container
         $securityRoles = [];
         foreach ($this->rolesHierarchy as $name => $rolesHierarchy) {
-            $securityRoles[$name] = $name . ': ' . implode(', ', $rolesHierarchy);
+            $securityRoles[$name] = $name;
             foreach ($rolesHierarchy as $action) {
                 if (!isset($securityRoles[$action])) {
                     $securityRoles[$action] = $action;
