@@ -9,7 +9,7 @@ services:
 
     glavweb_security.access_voter:
         class:  Glavweb\SecurityBundle\Security\Authorization\Voter\AccessVoter
-        arguments: ["@doctrine", "@glavweb_security.access_handler"]
+        arguments: ["@doctrine", "@glavweb_security.access_handler", "@glavweb_security.role_hierarchy_util"]
         public: false
         tags:
            - { name: security.voter }
@@ -33,3 +33,7 @@ services:
     glavweb_security.admin_security_handler_role:
         class: Glavweb\SecurityBundle\Admin\SecurityHandlerRole
         arguments: ["@security.authorization_checker", "@glavweb_security.access_handler", [ROLE_SUPER_ADMIN]]
+
+    glavweb_security.role_hierarchy_util:
+        class:  Glavweb\SecurityBundle\Util\RoleHierarchyUtil
+        arguments: ["%security.role_hierarchy.roles%"]

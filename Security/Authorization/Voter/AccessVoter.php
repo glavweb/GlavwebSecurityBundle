@@ -16,6 +16,7 @@ use Doctrine\Common\Annotations\Reader;
 use Doctrine\ORM\EntityManager;
 use Glavweb\SecurityBundle\Mapping\Annotation\Access;
 use Glavweb\SecurityBundle\Security\AccessHandler;
+use Glavweb\SecurityBundle\Util\RoleHierarchyUtil;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -44,15 +45,22 @@ class AccessVoter implements VoterInterface
     protected $accessAnnotation;
 
     /**
-     * AccessVoter constructor.
-     * @param Registry $doctrine
-     * @param AccessHandler $accessHandler
-     * @internal param Reader $annotationReader
+     * @var RoleHierarchyUtil
      */
-    public function __construct(Registry $doctrine, AccessHandler $accessHandler)
+    private $roleHierarchyUtil;
+
+    /**
+     * AccessVoter constructor.
+     *
+     * @param Registry          $doctrine
+     * @param AccessHandler     $accessHandler
+     * @param RoleHierarchyUtil $roleHierarchyUtil
+     */
+    public function __construct(Registry $doctrine, AccessHandler $accessHandler, RoleHierarchyUtil $roleHierarchyUtil)
     {
-        $this->doctrine      = $doctrine;
-        $this->accessHandler = $accessHandler;
+        $this->doctrine          = $doctrine;
+        $this->accessHandler     = $accessHandler;
+        $this->roleHierarchyUtil = $roleHierarchyUtil;
     }
 
     /**
@@ -108,7 +116,7 @@ class AccessVoter implements VoterInterface
         if (!$user instanceof UserInterface || !method_exists($user, 'getId')) {
             return VoterInterface::ACCESS_ABSTAIN;
         }
-        $userRoles = $user->getRoles();
+        $userRoles = $this->roleHierarchyUtil->getUserRoles($user);
 
         $alias = 't';
         foreach ($attributes as $attribute) {
