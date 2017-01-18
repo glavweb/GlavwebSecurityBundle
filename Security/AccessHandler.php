@@ -198,6 +198,11 @@ class AccessHandler
                 $reflectionClass = new \ReflectionClass($reflectionClass);
             }
 
+            // If is a Proxy
+            if (in_array(Proxy::class, $reflectionClass->getInterfaceNames())) {
+                $reflectionClass = new \ReflectionClass($reflectionClass->getParentClass()->getName());
+            }
+            
             self::$accessAnnotationCache[$className] = $this->annotationReader->getClassAnnotation(
                 $reflectionClass,
                 'Glavweb\SecurityBundle\Mapping\Annotation\Access'
