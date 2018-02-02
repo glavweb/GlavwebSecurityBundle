@@ -1,0 +1,12 @@
+glavweb_security:
+    header_permissions_entities: Permissions for entities
+    header_basic_roles: Basic roles
+    role:
+        create: Create
+        list: List
+        view: View
+        edit: Edit
+        delete: Delete
+        export: Export
+    role_group:
+        master: Master

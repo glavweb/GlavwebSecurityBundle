@@ -2,34 +2,44 @@
 
 {% block glavweb_security_roles_widget %}
     {% spaceless %}
-        <div class="editable">
+        <div class="glavweb-security-field-wrapper">
             {% set values = {} %}
             {%- for name, child in form %}
                 {%- set values = values|merge({(child.vars.label) : (name)}) %}
             {% endfor -%}
 
+            <h4 class="glavweb-security-header-basic-roles">{% trans %}glavweb_security.header_basic_roles{% endtrans %}</h4>
+            {% for name, value in securityRoles %}
+                {% set child = form[values[name]] %}
+
+                <div>
+                    {{- form_widget(child, {'label': value}) -}}
+                </div>
+            {% endfor %}
+
             {% if entityRoles|length %}
-                <h4>Permissions for entities</h4>
+                <h4 class="glavweb-security-header-permissions-entities">{% trans %}glavweb_security.header_permissions_entities{% endtrans %}</h4>
                 <table class="table">
                     <tr>
                         <td></td>
-                        <td>Create</td>
-                        <td>List</td>
-                        <td>View</td>
-                        <td>Edit</td>
-                        <td>Delete</td>
-                        <td>Export</td>
+                        <td>{% trans %}glavweb_security.role.create{% endtrans %}</td>
+                        <td>{% trans %}glavweb_security.role.list{% endtrans %}</td>
+                        <td>{% trans %}glavweb_security.role.view{% endtrans %}</td>
+                        <td>{% trans %}glavweb_security.role.edit{% endtrans %}</td>
+                        <td>{% trans %}glavweb_security.role.delete{% endtrans %}</td>
+                        <td>{% trans %}glavweb_security.role.export{% endtrans %}</td>
                     </tr>
 
                     {% for entityName, roleChoices in entityRoles %}
                         <tr><td colspan="7"><strong>{{ entityName }}</strong></td></tr>
 
                         {% for roleName, roleData in roleChoices %}
-                            {% set roleName = roleData['name'] %}
-                            {% set choices  = roleData['roles'] %}
+                            {% set roleName      = roleData['name'] %}
+                            {% set choices       = roleData['roles'] %}
+                            {% set roleGroupName = 'glavweb_security.role_group.' ~ roleName|lower %}
 
                             <tr>
-                                <td>&nbsp;&nbsp;&nbsp;&nbsp;{{ roleName }}</td>
+                                <td>&nbsp;&nbsp;&nbsp;&nbsp;{{ roleGroupName|trans }}</td>
                                 {% if roleName != 'Master' %}
                                     <td></td>
                                     <td></td>
@@ -47,16 +57,6 @@
                     {% endfor %}
                 </table>
             {% endif %}
-
-            <h4>Basic roles</h4>
-            {% for name, value in securityRoles %}
-                {% set child = form[values[name]] %}
-
-                <div>
-                    {{- form_widget(child) -}}
-                    {{- form_label(child, null, {translation_domain: choice_translation_domain}) -}}
-                </div>
-            {% endfor %}
 
         </div>
     {% endspaceless %}

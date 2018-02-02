@@ -1,0 +1,12 @@
+glavweb_security:
+    header_permissions_entities: Права доступа к объектам
+    header_basic_roles: Базовые роли
+    role:
+        create: Создание
+        list: Список
+        view: Просмотр
+        edit: Изменение
+        delete: Удаление
+        export: Экспорт
+    role_group:
+        master: Все записи
