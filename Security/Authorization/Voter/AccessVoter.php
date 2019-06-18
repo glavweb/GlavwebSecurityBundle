@@ -101,6 +101,10 @@ class AccessVoter implements VoterInterface
      */
     public function vote(TokenInterface $token, $object, array $attributes)
     {
+        if (!is_object($object)) {
+            return VoterInterface::ACCESS_ABSTAIN;
+        }
+        
         $class = get_class($object);
 
         if (!$this->supportsClass($class)) {
