@@ -98,11 +98,6 @@ class EditableRolesBuilder
         $securityRoles = [];
         foreach ($this->rolesHierarchy as $name => $rolesHierarchy) {
             $securityRoles[$name] = $name;
-            foreach ($rolesHierarchy as $action) {
-                if (!isset($securityRoles[$action])) {
-                    $securityRoles[$action] = $action;
-                }
-            }
         }
         
         return [$entityRoles, $securityRoles];
