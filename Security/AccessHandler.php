@@ -12,6 +12,7 @@
 namespace Glavweb\SecurityBundle\Security;
 
 use Doctrine\Common\Annotations\Reader;
+use Doctrine\ORM\Proxy\Proxy;
 use Glavweb\SecurityBundle\Mapping\Annotation\Access;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
