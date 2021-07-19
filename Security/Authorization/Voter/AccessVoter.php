@@ -12,7 +12,6 @@
 namespace Glavweb\SecurityBundle\Security\Authorization\Voter;
 
 use Doctrine\Bundle\DoctrineBundle\Registry;
-use Doctrine\Common\Annotations\Reader;
 use Doctrine\ORM\EntityManager;
 use Glavweb\SecurityBundle\Mapping\Annotation\Access;
 use Glavweb\SecurityBundle\Security\AccessHandler;

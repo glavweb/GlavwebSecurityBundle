@@ -1,7 +1,7 @@
 {% use "form_div_layout.html.twig" %}
 
 {% block glavweb_security_roles_widget %}
-    {% spaceless %}
+    {% apply spaceless %}
         <div class="glavweb-security-field-wrapper">
             {% set values = {} %}
             {%- for name, child in form %}
@@ -59,5 +59,5 @@
             {% endif %}
 
         </div>
-    {% endspaceless %}
+    {% endapply %}
 {% endblock %}

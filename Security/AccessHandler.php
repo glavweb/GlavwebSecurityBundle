@@ -12,10 +12,14 @@
 namespace Glavweb\SecurityBundle\Security;
 
 use Doctrine\Common\Annotations\Reader;
-use Doctrine\ORM\Proxy\Proxy;
 use Glavweb\SecurityBundle\Mapping\Annotation\Access;
+use ReflectionClass;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Error\SyntaxError;
+use Twig\Loader\ArrayLoader;
 
 /**
  * Class AccessHandler
@@ -46,7 +50,7 @@ class AccessHandler
     private $tokenStorage;
 
     /**
-     * @var \Twig_Environment
+     * @var Environment
      */
     private $twigEnvironment;
 
@@ -183,30 +187,25 @@ class AccessHandler
     }
 
     /**
-     * @param string|\ReflectionClass $class
+     * @param string|ReflectionClass $class
      * @return Access|null
      */
     public function getAccessAnnotation($class)
     {
         $className = $class;
-        if ($class instanceof \ReflectionClass) {
+        if ($class instanceof ReflectionClass) {
             $className = $class->getName();
         }
 
         if (!isset(self::$accessAnnotationCache[$className])) {
             $reflectionClass = $class;
-            if (!$reflectionClass instanceof \ReflectionClass) {
-                $reflectionClass = new \ReflectionClass($reflectionClass);
-            }
-
-            // If is a Proxy
-            if (in_array(Proxy::class, $reflectionClass->getInterfaceNames())) {
-                $reflectionClass = new \ReflectionClass($reflectionClass->getParentClass()->getName());
+            if (!$reflectionClass instanceof ReflectionClass) {
+                $reflectionClass = new ReflectionClass($reflectionClass);
             }
             
             self::$accessAnnotationCache[$className] = $this->annotationReader->getClassAnnotation(
                 $reflectionClass,
-                'Glavweb\SecurityBundle\Mapping\Annotation\Access'
+                Access::class
             );
         }
 
@@ -214,10 +213,12 @@ class AccessHandler
     }
 
     /**
-     * @param string $condition
-     * @param string $alias
-     * @param UserInterface $user
+     * @param string             $condition
+     * @param string             $alias
+     * @param UserInterface|null $user
      * @return string
+     * @throws LoaderError
+     * @throws SyntaxError
      */
     public function conditionPlaceholder($condition, $alias, UserInterface $user = null)
     {
@@ -240,12 +241,12 @@ class AccessHandler
     }
 
     /**
-     * @return \Twig_Environment
+     * @return Environment
      */
     private function getTwigEnvironment()
     {
         if (!$this->twigEnvironment) {
-            $this->twigEnvironment = new \Twig_Environment(new \Twig_Loader_Array([]), [
+            $this->twigEnvironment = new Environment(new ArrayLoader([]), [
                 'strict_variables' => true,
                 'autoescape'       => false,
             ]);

@@ -67,7 +67,7 @@ class SecurityHandlerRole implements SecurityHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function isGranted(AdminInterface $admin, $attributes, $object = null)
+    public function isGranted(AdminInterface $admin, $attributes, ?object $object = null): bool
     {
         if (!is_array($attributes)) {
             $attributes = array($attributes);
@@ -95,7 +95,7 @@ class SecurityHandlerRole implements SecurityHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function getBaseRole(AdminInterface $admin)
+    public function getBaseRole(AdminInterface $admin): string
     {
         $baseRole = $this->accessHandler->getBaseRole($admin->getClass());
 
@@ -109,7 +109,7 @@ class SecurityHandlerRole implements SecurityHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function buildSecurityInformation(AdminInterface $admin)
+    public function buildSecurityInformation(AdminInterface $admin): array
     {
         return [];
     }
@@ -117,12 +117,12 @@ class SecurityHandlerRole implements SecurityHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function createObjectSecurity(AdminInterface $admin, $object)
+    public function createObjectSecurity(AdminInterface $admin, $object): void
     {}
 
     /**
      * {@inheritdoc}
      */
-    public function deleteObjectSecurity(AdminInterface $admin, $object)
+    public function deleteObjectSecurity(AdminInterface $admin, $object): void
     {}
 }
