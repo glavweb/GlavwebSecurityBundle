@@ -74,8 +74,14 @@ class SecurityHandlerRole implements SecurityHandlerInterface
         }
 
         foreach ($attributes as $pos => $attribute) {
+            $attribute = strtoupper($attribute);
             $attribute = isset($this->roleReplaces[$attribute]) ? $this->roleReplaces[$attribute] : $attribute;
-            $attributes[$pos] = sprintf($this->getBaseRole($admin), $attribute);
+
+            if (strpos($attribute, 'ROLE_') !== 0) {
+                $attribute = sprintf($this->getBaseRole($admin), $attribute);
+            }
+
+            $attributes[$pos] = $attribute;
         }
 
         try {
