@@ -15,7 +15,8 @@
     "require": {
         "symfony/http-foundation": "^2.7|^3.0|^4.0",
         "symfony/form": "^2.7|^3.0|^4.0",
-        "symfony/security-bundle": "^2.7|^3.0|^4.0"
+        "symfony/security-bundle": "^2.7|^3.0|^4.0",
+        "symfony/twig-bundle": "^2.7|^3.0|^4.0"
     },
     "autoload": {
         "psr-4": { "Glavweb\\SecurityBundle\\": "" }
