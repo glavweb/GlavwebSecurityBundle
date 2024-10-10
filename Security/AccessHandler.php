@@ -16,6 +16,8 @@ use Doctrine\ORM\Proxy\Proxy;
 use Glavweb\SecurityBundle\Mapping\Annotation\Access;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 
 /**
  * Class AccessHandler
@@ -46,7 +48,7 @@ class AccessHandler
     private $tokenStorage;
 
     /**
-     * @var \Twig_Environment
+     * @var Environment
      */
     private $twigEnvironment;
 
@@ -55,11 +57,13 @@ class AccessHandler
      *
      * @param Reader $annotationReader
      * @param TokenStorageInterface $tokenStorage
+     * @param Environment $twigEnvironment
      */
-    public function __construct(Reader $annotationReader, TokenStorageInterface $tokenStorage)
+    public function __construct(Reader $annotationReader, TokenStorageInterface $tokenStorage, Environment $twigEnvironment = null)
     {
         $this->annotationReader = $annotationReader;
         $this->tokenStorage     = $tokenStorage;
+        $this->twigEnvironment  = $twigEnvironment;
     }
 
     /**
@@ -240,12 +244,12 @@ class AccessHandler
     }
 
     /**
-     * @return \Twig_Environment
+     * @return Environment
      */
     private function getTwigEnvironment()
     {
         if (!$this->twigEnvironment) {
-            $this->twigEnvironment = new \Twig_Environment(new \Twig_Loader_Array([]), [
+            $this->twigEnvironment = new Environment(new ArrayLoader(), [
                 'strict_variables' => true,
                 'autoescape'       => false,
             ]);
