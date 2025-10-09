@@ -67,27 +67,19 @@ class SecurityHandlerRole implements SecurityHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function isGranted(AdminInterface $admin, $attributes, ?object $object = null): bool
+    public function isGranted(AdminInterface $admin, $attribute, ?object $object = null): bool
     {
-        if (!is_array($attributes)) {
-            $attributes = array($attributes);
-        }
+        $attribute = strtoupper($attribute);
+        $attribute = isset($this->roleReplaces[$attribute]) ? $this->roleReplaces[$attribute] : $attribute;
 
-        foreach ($attributes as $pos => $attribute) {
-            $attribute = strtoupper($attribute);
-            $attribute = isset($this->roleReplaces[$attribute]) ? $this->roleReplaces[$attribute] : $attribute;
-
-            if (strpos($attribute, 'ROLE_') !== 0) {
-                $attribute = sprintf($this->getBaseRole($admin), $attribute);
-            }
-
-            $attributes[$pos] = $attribute;
+        if (strpos($attribute, 'ROLE_') !== 0) {
+            $attribute = sprintf($this->getBaseRole($admin), $attribute);
         }
 
         try {
             return 
                 $this->authorizationChecker->isGranted($this->superAdminRoles) ||
-                $this->authorizationChecker->isGranted($attributes, $object)
+                $this->authorizationChecker->isGranted($attribute, $object)
             ;
             
         } catch (AuthenticationCredentialsNotFoundException $e) {
