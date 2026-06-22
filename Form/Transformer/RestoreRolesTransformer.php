@@ -15,43 +15,27 @@ use Glavweb\SecurityBundle\Security\EditableRolesBuilder;
 use Symfony\Component\Form\DataTransformerInterface;
 
 /**
- * Class RestoreRolesTransformer
+ * Class RestoreRolesTransformer.
  *
  * @author Andrey Nilov <nilov@glavweb.ru>
- * @package Glavweb\SecurityBundle
  */
 class RestoreRolesTransformer implements DataTransformerInterface
 {
     /**
      * @var array
      */
-    protected $originalRoles = null;
+    protected $originalRoles;
 
-    /**
-     * @var EditableRolesBuilder
-     */
-    protected $rolesBuilder;
-
-    /**
-     * @param EditableRolesBuilder $rolesBuilder
-     */
-    public function __construct(EditableRolesBuilder $rolesBuilder)
+    public function __construct(protected EditableRolesBuilder $rolesBuilder)
     {
-        $this->rolesBuilder = $rolesBuilder;
     }
 
-    /**
-     * @param array|null $originalRoles
-     */
-    public function setOriginalRoles(array $originalRoles = null)
+    public function setOriginalRoles(?array $originalRoles = null): void
     {
-        $this->originalRoles = $originalRoles ?: array();
+        $this->originalRoles = $originalRoles ?: [];
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function transform($value)
+    public function transform($value): mixed
     {
         if ($value === null) {
             return $value;
@@ -64,19 +48,16 @@ class RestoreRolesTransformer implements DataTransformerInterface
         return $value;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function reverseTransform($selectedRoles)
+    public function reverseTransform($value): mixed
     {
         if ($this->originalRoles === null) {
             throw new \RuntimeException('Invalid state, originalRoles array is not set');
         }
 
-        list($availableRoles, ) = $this->rolesBuilder->getRoles();
+        [$availableRoles] = $this->rolesBuilder->getRoles();
 
         $hiddenRoles = array_diff($this->originalRoles, array_keys($availableRoles));
 
-        return array_merge($selectedRoles, $hiddenRoles);
+        return array_merge($value, $hiddenRoles);
     }
 }

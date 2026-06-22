@@ -1,7 +1,7 @@
 services:
     glavweb_security.access_handler:
         class:  Glavweb\SecurityBundle\Security\AccessHandler
-        arguments: ["@annotation_reader", "@security.token_storage"]
+        arguments: ["@security.token_storage"]
 
     glavweb_security.access_query_builder_filter:
         class: Glavweb\SecurityBundle\Security\QueryBuilderFilter

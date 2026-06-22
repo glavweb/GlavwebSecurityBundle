@@ -15,64 +15,51 @@ use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\Mapping\ClassMetadata;
 
 /**
- * Class EditableRolesBuilder
+ * Class EditableRolesBuilder.
  *
  * @author Andrey Nilov <nilov@glavweb.ru>
- * @package Glavweb\SecurityBundle
  */
 class EditableRolesBuilder
 {
     /**
-     * @var
-     */
-    protected $doctrine;
-
-    /**
-     * @var AccessHandler
-     */
-    protected $accessHandler;
-
-    /**
-     * @var array
-     */
-    protected $rolesHierarchy;
-
-    /**
-     * @param Registry $doctrine
-     * @param AccessHandler $accessHandler
-     * @param array $rolesHierarchy
      * @internal param Reader $annotationReader
      */
-    public function __construct(Registry $doctrine, AccessHandler $accessHandler, array $rolesHierarchy = [])
-    {
-        $this->doctrine        = $doctrine;
-        $this->accessHandler   = $accessHandler;
-        $this->rolesHierarchy  = $rolesHierarchy;
+    public function __construct(
+        /**
+         * @var
+         */
+        protected Registry $doctrine,
+        protected AccessHandler $accessHandler,
+        /**
+         * @var mixed[]
+         */
+        protected array $rolesHierarchy = [],
+    ) {
     }
 
     /**
-     * @return array
+     * @return array<int, int[]|string[]|non-empty-array<array<string, mixed>>[]>
      */
-    public function getRoles()
+    public function getRoles(): array
     {
         /** @var ClassMetadata[] $allMetaData */
-        $actions            = $this->accessHandler->getActions();
+        $actions = $this->accessHandler->getActions();
         $actionsOnlyObjects = $this->accessHandler->getActions(true);
-        $em                 = $this->doctrine->getManager();
+        $em = $this->doctrine->getManager();
 
         // Entity roles
-        $entityRoles = array();
+        $entityRoles = [];
         $allMetaData = $em->getMetadataFactory()->getAllMetadata();
         foreach ($allMetaData as $metaData) {
             $reflectionClass = $metaData->getReflectionClass();
-            $accessAnnotation = $this->accessHandler->getAccessAnnotation($reflectionClass);
+            $accessAttribute = $this->accessHandler->getAccessAttribute($reflectionClass);
 
-            if (!$accessAnnotation) {
+            if (!$accessAttribute) {
                 continue;
             }
 
             $entityClass = $metaData->getName();
-            $entityName  = $accessAnnotation->getName() ?: current(array_slice(explode('\\', $entityClass), -1));
+            $entityName = $accessAttribute->getName() ?: current(\array_slice(explode('\\', $entityClass), -1));
 
             // Master
             $entityRoles[$entityName]['master']['name'] = 'Master';
@@ -82,9 +69,9 @@ class EditableRolesBuilder
             }
 
             // Additional Roles
-            $additionalRoles = $accessAnnotation->getAdditionalRoles();
+            $additionalRoles = $accessAttribute->getAdditionalRoles();
             foreach ($additionalRoles as $additionalRoleName => $additionalRoleData) {
-                $roleTitle = isset($additionalRoleData['name']) ? $additionalRoleData['name'] : ucfirst($additionalRoleName);
+                $roleTitle = $additionalRoleData['name'] ?? ucfirst((string) $additionalRoleName);
                 $entityRoles[$entityName][$additionalRoleName]['name'] = $roleTitle;
 
                 foreach ($actionsOnlyObjects as $action) {
@@ -96,10 +83,10 @@ class EditableRolesBuilder
 
         // Get roles from the service container
         $securityRoles = [];
-        foreach ($this->rolesHierarchy as $name => $rolesHierarchy) {
+        foreach (array_keys($this->rolesHierarchy) as $name) {
             $securityRoles[$name] = $name;
         }
-        
+
         return [$entityRoles, $securityRoles];
     }
 }

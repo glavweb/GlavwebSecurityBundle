@@ -1,5 +1,6 @@
 #!/bin/bash
 set -x
+shopt -s dotglob
 
 cd ..
 

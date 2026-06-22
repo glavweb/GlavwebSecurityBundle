@@ -14,10 +14,10 @@ namespace Glavweb\SecurityBundle;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 /**
- * Class GlavwebSecurityBundle
+ * Class GlavwebSecurityBundle.
  *
  * @author Andrey Nilov <nilov@glavweb.ru>
- * @package Glavweb\SecurityBundle
  */
 class GlavwebSecurityBundle extends Bundle
-{}
+{
+}

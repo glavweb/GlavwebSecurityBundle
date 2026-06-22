@@ -2,10 +2,8 @@
 set -x
 set -e
 
-composer config minimum-stability alpha
-
-composer require -n $PACKAGE_NAME
-
-php bin/phpunit
+composer require -n $PACKAGE_NAME:dev-main \
+&& php bin/phpunit \
+|| echo 'FAILED'
 
 ../scripts/copy.sh

@@ -16,43 +16,28 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
- * Class QueryBuilderFilter
+ * Class QueryBuilderFilter.
  *
  * @author Andrey Nilov <nilov@glavweb.ru>
- * @package Glavweb\SecurityBundle
  */
 class QueryBuilderFilter
 {
     /**
-     * @var AccessHandler
-     */
-    private $accessHandler;
-
-    /**
-     * @var AuthorizationCheckerInterface
-     */
-    private $authorizationChecker;
-
-    /**
      * QueryBuilderFilter constructor.
-     *
-     * @param AccessHandler $accessHandler
-     * @param AuthorizationCheckerInterface $authorizationChecker
      */
-    public function __construct(AccessHandler $accessHandler, AuthorizationCheckerInterface $authorizationChecker)
-    {
-        $this->accessHandler        = $accessHandler;
-        $this->authorizationChecker = $authorizationChecker;
+    public function __construct(
+        private readonly AccessHandler $accessHandler,
+        private readonly AuthorizationCheckerInterface $authorizationChecker,
+    ) {
     }
 
     /**
-     * @param QueryBuilder $queryBuilder
      * @param string $class
      * @param string $alias
-     * @return QueryBuilder
+     *
      * @throws AccessDeniedException
      */
-    protected function filter(QueryBuilder $queryBuilder, $class, $alias)
+    protected function filter(QueryBuilder $queryBuilder, $class, $alias): QueryBuilder
     {
         $condition = $this->getSecurityCondition($class);
 
@@ -66,15 +51,14 @@ class QueryBuilderFilter
 
     /**
      * @param string $class
-     * @return string|null
      */
-    public function getSecurityCondition($class)
+    public function getSecurityCondition($class): ?string
     {
-        $accessHandler        = $this->accessHandler;
+        $accessHandler = $this->accessHandler;
         $authorizationChecker = $this->authorizationChecker;
 
         $securityConditions = [];
-        if ($accessHandler->hasAccessAnnotation($class)) {
+        if ($accessHandler->hasAccessAttribute($class)) {
             $masterViewRole = $accessHandler->getRole($class, 'VIEW');
 
             if (!$authorizationChecker->isGranted($masterViewRole)) {

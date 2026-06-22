@@ -18,109 +18,79 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationCredentialsNotFoundException;
 
 /**
- * Class SecurityHandlerRole
+ * Class SecurityHandlerRole.
  *
  * @author Andrey Nilov <nilov@glavweb.ru>
- * @package Glavweb\SecurityBundle
  */
 class SecurityHandlerRole implements SecurityHandlerInterface
 {
     /**
-     * @var AuthorizationCheckerInterface
-     */
-    protected $authorizationChecker;
-
-    /**
-     * @var AccessHandler
-     */
-    private $accessHandler;
-
-    /**
-     * @var array
-     */
-    protected $superAdminRoles;
-
-    /**
      * @var array
      */
     protected $roleReplaces = [
-        'LIST'   => 'LIST',
-        'VIEW'   => 'VIEW',
+        'LIST' => 'LIST',
+        'VIEW' => 'VIEW',
         'CREATE' => 'CREATE',
-        'EDIT'   => 'EDIT',
+        'EDIT' => 'EDIT',
         'DELETE' => 'DELETE',
         'EXPORT' => 'EXPORT',
     ];
 
-    /**
-     * @param AuthorizationCheckerInterface $authorizationChecker
-     * @param AccessHandler $accessHandler
-     * @param array $superAdminRoles
-     */
-    public function __construct(AuthorizationCheckerInterface $authorizationChecker, AccessHandler $accessHandler, array $superAdminRoles)
-    {
-        $this->authorizationChecker = $authorizationChecker;
-        $this->accessHandler        = $accessHandler;
-        $this->superAdminRoles      = $superAdminRoles;
+    public function __construct(
+        protected AuthorizationCheckerInterface $authorizationChecker,
+        private readonly AccessHandler $accessHandler,
+        /**
+         * @var mixed[]
+         */
+        protected array $superAdminRoles,
+    ) {
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function isGranted(AdminInterface $admin, $attribute, ?object $object = null): bool
+    public function isGranted(AdminInterface $admin, $attributes, ?object $object = null): bool
     {
-        $attribute = strtoupper($attribute);
-        $attribute = isset($this->roleReplaces[$attribute]) ? $this->roleReplaces[$attribute] : $attribute;
+        if (!\is_string($attributes)) {
+            throw new \InvalidArgumentException('The attributes must be a string.');
+        }
 
-        if (strpos($attribute, 'ROLE_') !== 0) {
-            $attribute = sprintf($this->getBaseRole($admin), $attribute);
+        $attribute = strtoupper($attributes);
+        $attribute = $this->roleReplaces[$attribute] ?? $attribute;
+
+        if (!str_starts_with((string) $attribute, 'ROLE_')) {
+            $attribute = \sprintf($this->getBaseRole($admin), $attribute);
         }
 
         try {
-            return 
-                $this->authorizationChecker->isGranted($this->superAdminRoles) ||
-                $this->authorizationChecker->isGranted($attribute, $object)
-            ;
-            
-        } catch (AuthenticationCredentialsNotFoundException $e) {
+            if ($this->authorizationChecker->isGranted($this->superAdminRoles)) {
+                return true;
+            }
+
+            return $this->authorizationChecker->isGranted($attribute, $object);
+        } catch (AuthenticationCredentialsNotFoundException) {
             return false;
-            
-        } catch (\Exception $e) {
-            throw $e;
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getBaseRole(AdminInterface $admin): string
     {
         $baseRole = $this->accessHandler->getBaseRole($admin->getClass());
 
         if (!$baseRole) {
-            $baseRole = 'ROLE_' . str_replace('.', '_', strtoupper($admin->getCode())) . '_%s';
+            return 'ROLE_'.str_replace('.', '_', strtoupper($admin->getCode())).'_%s';
         }
 
         return $baseRole;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function buildSecurityInformation(AdminInterface $admin): array
     {
         return [];
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function createObjectSecurity(AdminInterface $admin, $object): void
-    {}
+    {
+    }
 
-    /**
-     * {@inheritdoc}
-     */
     public function deleteObjectSecurity(AdminInterface $admin, $object): void
-    {}
+    {
+    }
 }

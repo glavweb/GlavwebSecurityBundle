@@ -14,33 +14,23 @@ namespace Glavweb\SecurityBundle\Util;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * Class RoleHierarchyUtil
- * 
+ * Class RoleHierarchyUtil.
+ *
  * @author Andrey Nilov <nilov@glavweb.ru>
- * @package Glavweb\SecurityBundle
  */
 class RoleHierarchyUtil
 {
     /**
-     * @var array
+     * RoleHierarchyUtil constructor.
      */
-    private $roleHierarchy;
+    public function __construct(private array $roleHierarchy)
+    {
+    }
 
     /**
-     * RoleHierarchyUtil constructor.
-     *
-     * @param array $roleHierarchy
+     * @return mixed[]
      */
-    public function __construct(array $roleHierarchy)
-    {
-        $this->roleHierarchy = $roleHierarchy;
-    }
-    
-    /**
-     * @param UserInterface $user
-     * @return mixed
-     */
-    public function getUserRoles(UserInterface $user)
+    public function getUserRoles(UserInterface $user): array
     {
         $userRoles = $user->getRoles();
 
@@ -61,9 +51,8 @@ class RoleHierarchyUtil
 
     /**
      * @param string $targetRole
-     * @return array
      */
-    public function getRoleByHierarchy($targetRole)
+    public function getRoleByHierarchy($targetRole): array
     {
         $roles = [];
 
@@ -82,5 +71,4 @@ class RoleHierarchyUtil
 
         return $roles;
     }
-    
 }

@@ -13,65 +13,28 @@ namespace Glavweb\SecurityBundle\Security\Authorization\Voter;
 
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
-use Glavweb\SecurityBundle\Mapping\Annotation\Access;
 use Glavweb\SecurityBundle\Security\AccessHandler;
 use Glavweb\SecurityBundle\Util\RoleHierarchyUtil;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * Class AccessVoter
+ * Class AccessVoter.
  *
  * @author Andrey Nilov <nilov@glavweb.ru>
- * @package Glavweb\SecurityBundle
  */
 class AccessVoter implements VoterInterface
 {
     /**
-     * @var Registry
-     */
-    protected $doctrine;
-
-    /**
-     * @var AccessHandler
-     */
-    private $accessHandler;
-
-    /**
-     * @var Access
-     */
-    protected $accessAnnotation;
-
-    /**
-     * @var RoleHierarchyUtil
-     */
-    private $roleHierarchyUtil;
-
-    /**
      * AccessVoter constructor.
-     *
-     * @param Registry          $doctrine
-     * @param AccessHandler     $accessHandler
-     * @param RoleHierarchyUtil $roleHierarchyUtil
      */
-    public function __construct(Registry $doctrine, AccessHandler $accessHandler, RoleHierarchyUtil $roleHierarchyUtil)
-    {
-        $this->doctrine          = $doctrine;
-        $this->accessHandler     = $accessHandler;
-        $this->roleHierarchyUtil = $roleHierarchyUtil;
-    }
-
-    /**
-     * Checks if the voter supports the given attribute.
-     *
-     * @param string $attribute An attribute
-     *
-     * @return bool true if this Voter supports the attribute, false otherwise
-     */
-    public function supportsAttribute($attribute)
-    {
-        return true;
+    public function __construct(
+        protected Registry $doctrine,
+        private readonly AccessHandler $accessHandler,
+        private readonly RoleHierarchyUtil $roleHierarchyUtil,
+    ) {
     }
 
     /**
@@ -81,7 +44,7 @@ class AccessVoter implements VoterInterface
      *
      * @return bool true if this Voter can process the class
      */
-    public function supportsClass($class)
+    public function supportsClass($class): bool
     {
         return true;
     }
@@ -92,25 +55,21 @@ class AccessVoter implements VoterInterface
      * This method must return one of the following constants:
      * ACCESS_GRANTED, ACCESS_DENIED, or ACCESS_ABSTAIN.
      *
-     * @param TokenInterface $token      A TokenInterface instance
-     * @param object|null $object     The object to secure
-     * @param array $attributes An array of attributes associated with the method being invoked
-     *
      * @return int either ACCESS_GRANTED, ACCESS_ABSTAIN, or ACCESS_DENIED
      */
-    public function vote(TokenInterface $token, $object, array $attributes)
+    public function vote(TokenInterface $token, mixed $subject, array $attributes, ?Vote $vote = null): int
     {
-        if (!is_object($object)) {
+        if (!\is_object($subject)) {
             return VoterInterface::ACCESS_ABSTAIN;
         }
-        
-        $class = get_class($object);
+
+        $class = $subject::class;
 
         if (!$this->supportsClass($class)) {
             return VoterInterface::ACCESS_ABSTAIN;
         }
 
-        if (!method_exists($object, 'getId')) {
+        if (!method_exists($subject, 'getId')) {
             return VoterInterface::ACCESS_ABSTAIN;
         }
 
@@ -119,11 +78,12 @@ class AccessVoter implements VoterInterface
         if (!$user instanceof UserInterface || !method_exists($user, 'getId')) {
             return VoterInterface::ACCESS_ABSTAIN;
         }
+
         $userRoles = $this->roleHierarchyUtil->getUserRoles($user);
 
         $alias = 't';
         foreach ($attributes as $attribute) {
-            if (in_array($attribute, $userRoles)) {
+            if (\in_array($attribute, $userRoles)) {
                 return VoterInterface::ACCESS_GRANTED;
             }
 
@@ -137,13 +97,13 @@ class AccessVoter implements VoterInterface
             foreach ($additionalRoles as $additionalRoleName => $additionalRoleData) {
                 $role = $this->accessHandler->getRole($class, $action, $additionalRoleName);
 
-                if (isset($additionalRoleData['condition']) && in_array($role, $userRoles)) {
+                if (isset($additionalRoleData['condition']) && \in_array($role, $userRoles)) {
                     $conditions[] = $this->accessHandler->conditionPlaceholder($additionalRoleData['condition'], $alias, $user);
                 }
             }
 
             if ($conditions) {
-                $isExistsObject = $this->isExistsObjectByConditions($object, $conditions, $alias);
+                $isExistsObject = $this->isExistsObjectByConditions($subject, $conditions, $alias);
                 if ($isExistsObject) {
                     return VoterInterface::ACCESS_GRANTED;
                 }
@@ -153,28 +113,21 @@ class AccessVoter implements VoterInterface
         return VoterInterface::ACCESS_ABSTAIN;
     }
 
-    /**
-     * @param object $object
-     * @param array  $conditions
-     * @param string $alias
-     * @return bool
-     */
-    private function isExistsObjectByConditions($object, array $conditions, $alias)
+    private function isExistsObjectByConditions(object $object, array $conditions, string $alias): bool
     {
         /** @var EntityManager $em */
         $em = $this->doctrine->getManager();
-        $class = get_class($object);
+        $class = $object::class;
 
         $qb = $em->getRepository($class)->createQueryBuilder($alias);
         $expr = $qb->expr();
         $qb
-            ->select('COUNT(' . $alias . ')')
-            ->where($alias . '.id = :object_id')
+            ->select('COUNT('.$alias.')')
+            ->where($alias.'.id = :object_id')
             ->andWhere($expr->orX()->addMultiple($conditions))
             ->setParameter('object_id', $object->getId())
         ;
-        $isValid = (bool)$qb->getQuery()->getSingleScalarResult();
 
-        return $isValid;
+        return (bool) $qb->getQuery()->getSingleScalarResult();
     }
 }

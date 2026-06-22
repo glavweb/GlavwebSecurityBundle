@@ -16,34 +16,21 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\OptionsResolver\Options;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Class SecurityRolesType
+ * Class SecurityRolesType.
  *
  * @author Andrey Nilov <nilov@glavweb.ru>
- * @package Glavweb\SecurityBundle
  */
 class SecurityRolesType extends AbstractType
 {
-    /**
-     * @var EditableRolesBuilder
-     */
-    protected $rolesBuilder;
-
-    /**
-     * @param EditableRolesBuilder $rolesBuilder
-     */
-    public function __construct(EditableRolesBuilder $rolesBuilder)
+    public function __construct(protected EditableRolesBuilder $rolesBuilder)
     {
-        $this->rolesBuilder = $rolesBuilder;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function buildView(FormView $view, FormInterface $form, array $options)
+    public function buildView(FormView $view, FormInterface $form, array $options): void
     {
         $attr = $view->vars['attr'];
 
@@ -51,47 +38,37 @@ class SecurityRolesType extends AbstractType
             $attr['class'] = 'sonata-medium';
         }
 
-        $view->vars['entityRoles']   = $options['entityRoles'];
+        $view->vars['entityRoles'] = $options['entityRoles'];
         $view->vars['securityRoles'] = $options['securityRoles'];
-        $view->vars['attr']          = $attr;
+        $view->vars['attr'] = $attr;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
-        list($entityRoles, $securityRoles) = $this->rolesBuilder->getRoles();
+        [$entityRoles, $securityRoles] = $this->rolesBuilder->getRoles();
 
-        $resolver->setDefaults(array(
-            'choices' => function (Options $options, $parentChoices) use ($entityRoles, $securityRoles) {
-                return empty($parentChoices) ? array_merge($entityRoles, $securityRoles) : [];
-            },
+        $resolver->setDefaults([
+            'choices' => static fn (Options $options, $parentChoices): array => empty($parentChoices) ? array_merge(
+                $entityRoles,
+                $securityRoles
+            ) : [],
 
-            'entityRoles' => function (Options $options, $parentChoices) use ($entityRoles) {
-                return empty($parentChoices) ? $entityRoles : [];
-            },
+            'entityRoles' => static fn (Options $options, $parentChoices) => empty($parentChoices) ? $entityRoles : [],
 
-            'securityRoles' => function (Options $options, $parentChoices) use ($securityRoles) {
-                return empty($parentChoices) ? $securityRoles : [];
-            },
+            'securityRoles' => static fn (Options $options, $parentChoices) => empty($parentChoices) ? $securityRoles : [],
 
-            'data_class' => null
-        ));
+            'data_class' => null,
+        ]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getBlockPrefix()
+    #[\Override]
+    public function getBlockPrefix(): string
     {
         return 'glavweb_security_roles';
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getParent()
+    #[\Override]
+    public function getParent(): ?string
     {
         return ChoiceType::class;
     }

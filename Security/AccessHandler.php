@@ -11,9 +11,7 @@
 
 namespace Glavweb\SecurityBundle\Security;
 
-use Doctrine\Common\Annotations\Reader;
-use Glavweb\SecurityBundle\Mapping\Annotation\Access;
-use ReflectionClass;
+use Glavweb\SecurityBundle\Mapping\Attribute\Access;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Twig\Environment;
@@ -22,62 +20,37 @@ use Twig\Error\SyntaxError;
 use Twig\Loader\ArrayLoader;
 
 /**
- * Class AccessHandler
+ * Class AccessHandler.
  *
  * @author Andrey Nilov <nilov@glavweb.ru>
- * @package Glavweb\SecurityBundle
  */
 class AccessHandler
 {
-    /**
-     * @var array
-     */
-    private static $accessAnnotationCache = [];
+    private static array $accessAttributeCache = [];
 
     /**
-     * @var array
+     * @var string[]
      */
-    private $actions = ['CREATE', 'LIST', 'VIEW', 'EDIT', 'DELETE', 'EXPORT'];
+    private array $actions = ['CREATE', 'LIST', 'VIEW', 'EDIT', 'DELETE', 'EXPORT'];
 
-    /**
-     * @var Reader
-     */
-    protected $annotationReader;
-
-    /**
-     * @var TokenStorageInterface
-     */
-    private $tokenStorage;
-
-    /**
-     * @var Environment
-     */
-    private $twigEnvironment;
+    private ?Environment $twigEnvironment = null;
 
     /**
      * AccessHandler constructor.
-     *
-     * @param Reader $annotationReader
-     * @param TokenStorageInterface $tokenStorage
      */
-    public function __construct(Reader $annotationReader, TokenStorageInterface $tokenStorage)
+    public function __construct(private readonly TokenStorageInterface $tokenStorage)
     {
-        $this->annotationReader = $annotationReader;
-        $this->tokenStorage     = $tokenStorage;
     }
 
     /**
      * @param bool $onlyForObjects
-     * @return array
      */
-    public function getActions($onlyForObjects = false)
+    public function getActions($onlyForObjects = false): array
     {
         $actions = $this->actions;
 
         if ($onlyForObjects) {
-            $actions = array_filter($actions, function ($item) {
-                return !in_array($item, ['CREATE', 'LIST']);
-            });
+            return array_filter($actions, static fn (string $item): bool => !\in_array($item, ['CREATE', 'LIST'], true));
         }
 
         return $actions;
@@ -85,13 +58,12 @@ class AccessHandler
 
     /**
      * @param string $class
-     * @return array|null
      */
-    public function getAdditionalRoles($class)
+    public function getAdditionalRoles($class): ?array
     {
-        $accessAnnotation = $this->getAccessAnnotation($class);
-        if ($accessAnnotation instanceof Access) {
-            return $accessAnnotation->getAdditionalRoles();
+        $accessAttribute = $this->getAccessAttribute($class);
+        if ($accessAttribute instanceof Access) {
+            return $accessAttribute->getAdditionalRoles();
         }
 
         return null;
@@ -99,13 +71,12 @@ class AccessHandler
 
     /**
      * @param string $class
-     * @return string|null
      */
-    public function getBaseRole($class)
+    public function getBaseRole($class): ?string
     {
-        $accessAnnotation = $this->getAccessAnnotation($class);
-        if ($accessAnnotation instanceof Access) {
-            return $accessAnnotation->getBaseRole();
+        $accessAttribute = $this->getAccessAttribute($class);
+        if ($accessAttribute instanceof Access) {
+            return $accessAttribute->getBaseRole();
         }
 
         return null;
@@ -114,16 +85,16 @@ class AccessHandler
     /**
      * @param string $class
      * @param string $role
-     * @return bool
      */
-    public function checkRole($class, $role)
+    public function checkRole($class, $role): bool
     {
-        return (bool)$this->getActionByRole($class, $role);
+        return (bool) $this->getActionByRole($class, $role);
     }
 
     /**
      * @param string $class
      * @param string $role
+     *
      * @return string|null
      */
     public function getActionByRole($class, $role)
@@ -147,9 +118,8 @@ class AccessHandler
      * @param string $class
      * @param string $action
      * @param string $additionalRole
-     * @return null|string
      */
-    public function getRole($class, $action, $additionalRole = null)
+    public function getRole($class, $action, $additionalRole = null): ?string
     {
         $baseRole = $this->getBaseRole($class);
 
@@ -164,14 +134,13 @@ class AccessHandler
      * @param string $baseRole
      * @param string $action
      * @param string $additionalRole
-     * @return null|string
      */
-    protected function makeRole($baseRole, $action, $additionalRole = null)
+    protected function makeRole($baseRole, $action, $additionalRole = null): string
     {
-        $role = sprintf($baseRole, strtoupper($action));
+        $role = \sprintf($baseRole, strtoupper($action));
 
         if ($additionalRole) {
-            $role .= '__' . strtoupper($additionalRole);
+            $role .= '__'.strtoupper($additionalRole);
         }
 
         return $role;
@@ -179,50 +148,51 @@ class AccessHandler
 
     /**
      * @param string $class
-     * @return bool
      */
-    public function hasAccessAnnotation($class)
+    public function hasAccessAttribute($class): bool
     {
-        return (bool)$this->getAccessAnnotation($class);
+        return (bool) $this->getAccessAttribute($class);
     }
 
     /**
-     * @param string|ReflectionClass $class
+     * @param string|\ReflectionClass $class
+     *
      * @return Access|null
      */
-    public function getAccessAnnotation($class)
+    public function getAccessAttribute($class)
     {
         $className = $class;
-        if ($class instanceof ReflectionClass) {
+        if ($class instanceof \ReflectionClass) {
             $className = $class->getName();
         }
 
-        if (!isset(self::$accessAnnotationCache[$className])) {
+        if (!isset(self::$accessAttributeCache[$className])) {
             $reflectionClass = $class;
-            if (!$reflectionClass instanceof ReflectionClass) {
-                $reflectionClass = new ReflectionClass($reflectionClass);
+            if (!$reflectionClass instanceof \ReflectionClass) {
+                $reflectionClass = new \ReflectionClass($reflectionClass);
             }
-            
-            self::$accessAnnotationCache[$className] = $this->annotationReader->getClassAnnotation(
-                $reflectionClass,
-                Access::class
-            );
+
+            $reflectionAttributes = $reflectionClass->getAttributes(Access::class);
+
+            if (\count($reflectionAttributes) > 1) {
+                throw new \RuntimeException('Only one access attribute is allowed');
+            }
+
+            self::$accessAttributeCache[$className] = $reflectionAttributes ? $reflectionAttributes[0]->newInstance() : null;
         }
 
-        return self::$accessAnnotationCache[$className];
+        return self::$accessAttributeCache[$className];
     }
 
     /**
-     * @param string             $condition
-     * @param string             $alias
-     * @param UserInterface|null $user
-     * @return string
+     * @param string $alias
+     *
      * @throws LoaderError
      * @throws SyntaxError
      */
-    public function conditionPlaceholder($condition, $alias, UserInterface $user = null)
+    public function conditionPlaceholder(string $condition, $alias, ?UserInterface $user = null): string
     {
-        if (!$user) {
+        if (!$user instanceof UserInterface) {
             $user = $this->tokenStorage->getToken()->getUser();
         }
 
@@ -234,21 +204,18 @@ class AccessHandler
         $template = $this->getTwigEnvironment()->createTemplate($condition);
 
         return trim($template->render([
-            'alias'  => $alias,
-            'user'   => $user,
+            'alias' => $alias,
+            'user' => $user,
             'userId' => $userId,
         ]));
     }
 
-    /**
-     * @return Environment
-     */
-    private function getTwigEnvironment()
+    private function getTwigEnvironment(): Environment
     {
-        if (!$this->twigEnvironment) {
+        if (!$this->twigEnvironment instanceof Environment) {
             $this->twigEnvironment = new Environment(new ArrayLoader([]), [
                 'strict_variables' => true,
-                'autoescape'       => false,
+                'autoescape' => false,
             ]);
         }
 

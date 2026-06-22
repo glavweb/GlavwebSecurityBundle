@@ -1,9 +1,6 @@
-FROM php:7.3-cli
+FROM php:8.4-cli
 
-ARG BUNDLE_VERSION
-ARG PACKAGE_NAME
-
-RUN apt-get update && \
+RUN apt-get update -y && \
     apt-get install -y \
       unzip \
       libzip-dev \
@@ -14,15 +11,14 @@ COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 WORKDIR /usr/src/
 
-RUN composer create-project symfony/skeleton:"^5.3" app
+RUN composer create-project symfony/skeleton:"^8.0" app \
+    && cd app \
+    && composer require --dev phpunit/phpunit symfony/test-pack \
+    && composer config repositories.glavweb "{\"type\": \"path\", \"url\": \"../bundle\", \"options\": {\"symlink\": true}}"
 
 COPY scripts/ scripts/
 RUN chmod +x scripts/*
 
 WORKDIR /usr/src/app
 
-RUN composer require --dev phpunit/phpunit symfony/test-pack
-
 COPY environment .
-
-RUN composer config repositories.glavweb "{\"type\": \"path\", \"url\": \"../bundle\", \"options\": {\"versions\": { \"$PACKAGE_NAME\": \"$BUNDLE_VERSION\" }}}"
