@@ -82,8 +82,8 @@ class AccessVoter implements VoterInterface
         $userRoles = $this->roleHierarchyUtil->getUserRoles($user);
 
         $alias = 't';
-        foreach ($attributes as $attribute) {
-            if (\in_array($attribute, $userRoles)) {
+        foreach ($this->flattenAttributes($attributes) as $attribute) {
+            if (\in_array($attribute, $userRoles, true)) {
                 return VoterInterface::ACCESS_GRANTED;
             }
 
@@ -111,6 +111,27 @@ class AccessVoter implements VoterInterface
         }
 
         return VoterInterface::ACCESS_ABSTAIN;
+    }
+
+    /**
+     * Symfony AuthorizationChecker wraps the attribute as decide($token, [$attribute], $subject).
+     * Expression is_granted(['ROLE_A', 'ROLE_B'], subject) therefore arrives as a nested array
+     * and must be treated as OR (any matching role).
+     *
+     * @param list<mixed> $attributes
+     *
+     * @return list<string>
+     */
+    private function flattenAttributes(array $attributes): array
+    {
+        $flat = [];
+        array_walk_recursive($attributes, static function (mixed $item) use (&$flat): void {
+            if (\is_string($item) && $item !== '') {
+                $flat[] = $item;
+            }
+        });
+
+        return $flat;
     }
 
     private function isExistsObjectByConditions(object $object, array $conditions, string $alias): bool
